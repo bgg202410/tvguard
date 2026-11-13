@@ -1,0 +1,23 @@
+* text=auto
+
+# 脚本换行符固定：Windows 批处理用 CRLF，Unix 脚本用 LF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+gradlew text eol=lf
+*.sh text eol=lf
+
+# 容器相关文件必须保持 LF：Dockerfile 里带 CRLF 会让 RUN 行尾多出 \r，
+# 构建时 shell 报 "not found"；compose / .env 同理，避免值里带隐形字符
+server/Dockerfile text eol=lf
+server/.dockerignore text eol=lf
+server/*.yml text eol=lf
+server/.env* text eol=lf
+server/src/*.js text eol=lf
+server/public/*.html text eol=lf
+
+# 二进制
+*.jar binary
+*.apk binary
+*.aab binary
+*.png binary
+*.jpg binary

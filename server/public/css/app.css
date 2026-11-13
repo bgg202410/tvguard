@@ -1,0 +1,378 @@
+  :root{
+    --bg:#14171C; --card:#232830; --card-hi:#2E353F; --ink:#F5F7FA; --ink2:#B4BECC;
+    --ink3:#7D8794; --line:#39414D; --brand:#4C8DFF; --brand-deep:#2E6FE0;
+    --ok:#4ADE80; --warn:#FBBF24; --bad:#F87171; --radius:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--ink); min-height:100vh;
+    font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:28px 20px 80px}
+  /* 深色底上浏览器默认的蓝链几乎看不见，统一成主色 */
+  a{color:#6EA8FF;text-decoration:none}
+  a:hover{text-decoration:underline}
+  header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:26px}
+  .logo{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,var(--brand),#7C5CFF);
+    display:grid;place-items:center;font-size:19px;font-weight:700}
+  h1{font-size:20px;margin:0;font-weight:650;letter-spacing:.3px}
+  .sub{color:var(--ink3);font-size:13px;margin-top:2px}
+  .spacer{flex:1}
+  .pill{display:inline-flex;align-items:center;gap:7px;padding:6px 13px;border-radius:999px;
+    background:var(--card);border:1px solid var(--line);font-size:13px;color:var(--ink2)}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px rgba(74,222,128,.15)}
+  .dot.off{background:var(--ink3);box-shadow:none}
+
+  h2{font-size:15px;margin:34px 0 14px;color:var(--ink2);font-weight:600;letter-spacing:.4px;
+    display:flex;align-items:center;gap:10px}
+  h2::after{content:"";flex:1;height:1px;background:var(--line)}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
+  /* 设备卡按台数换版式：1 台铺满整行（左统计、右启动项），2 台各占一半，
+     3 台以上走网格。卡片一宽，kv 行就会左右拉得很散，这里换成仪表盘式小格子。 */
+  .devwrap{display:block}
+  .devside{margin-top:14px}
+  .grid.one{grid-template-columns:1fr}
+  .grid.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .grid.one .card, .grid.two .card{padding:20px 22px 18px}
+  .grid.one .devwrap, .grid.two .devwrap{margin-top:14px}
+  .grid.one .devstats, .grid.two .devstats{display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:18px 20px;align-content:center}
+  .grid.one .devstats .kv, .grid.two .devstats .kv{display:block;margin-top:0;font-size:12px;
+    color:var(--ink3);line-height:1.5}
+  .grid.one .devstats .kv > b, .grid.two .devstats .kv > b{display:block;margin-top:5px;
+    font-size:15px;color:var(--ink)}
+
+  /* 后台保活开关：塞在统计格里，点一下就切状态 */
+  .switchrow{display:flex;align-items:center;gap:8px;margin-top:7px}
+  .switchrow em{font-style:normal;font-size:13px;color:var(--ink2);white-space:nowrap}
+  .switchrow em.ok{color:var(--ok)}
+  .switchrow em.warn{color:#F7C97C}
+  .switchrow em.bad{color:#F79C9C}
+  .switch{position:relative;flex:0 0 auto;width:42px;height:23px;padding:0;border:0;
+    border-radius:12px;background:#3B434F;cursor:pointer;transition:background .18s}
+  .switch::after{content:'';position:absolute;top:3px;left:3px;width:17px;height:17px;
+    border-radius:50%;background:#8D97A6;transition:left .18s,background .18s}
+  .switch:hover{background:#46505E}
+  .switch.on{background:rgba(74,222,128,.30)}
+  .switch.on::after{left:22px;background:var(--ok)}
+  .switch.pending{background:rgba(247,201,124,.28)}
+  .switch.pending::after{left:22px;background:#F7C97C}
+  .switch:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+  /* 答案换时长那句偏长，宽卡片里给它两格宽度，别折成两行 */
+  .grid.one .devstats .kv.span2, .grid.two .devstats .kv.span2{grid-column:span 2}
+  /* 只有 1 台时才左右分栏，2 台卡片不够宽，分栏会把启动项下拉框挤变形 */
+  .grid.one .devwrap{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);
+    column-gap:30px;align-items:stretch}
+  .grid.one .devside{margin-top:0;padding-left:28px;border-left:1px solid var(--line)}
+  @media (max-width:900px){
+    .grid.two{grid-template-columns:1fr}
+    .grid.one .devwrap{grid-template-columns:1fr}
+    .grid.one .devside{margin-top:16px;padding-left:0;border-left:0}
+  }
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px 18px 16px}
+  .card.hot{border-color:rgba(76,141,255,.45);box-shadow:0 0 0 3px rgba(76,141,255,.08)}
+  .row{display:flex;align-items:center;gap:10px}
+  .row.between{justify-content:space-between}
+  .devname{font-size:17px;font-weight:620}
+  .muted{color:var(--ink3);font-size:13px}
+  /* 设备号 / ID 这类等宽显示，方便肉眼比对 */
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--ink2)}
+  .kv{display:flex;justify-content:space-between;font-size:13px;color:var(--ink2);margin-top:9px}
+  .kv b{color:var(--ink);font-weight:600}
+  .bar{height:9px;border-radius:999px;background:#1A1E24;margin-top:12px;overflow:hidden}
+  .bar > i{display:block;height:100%;border-radius:999px;background:var(--ok);transition:width .4s ease;min-width:4px}
+  .bar > i.warn{background:var(--warn)}
+  .bar > i.bad{background:var(--bad)}
+
+  button{font:inherit;cursor:pointer;border-radius:10px;border:1px solid var(--line);
+    background:var(--card-hi);color:var(--ink);padding:8px 14px;transition:.15s}
+  button:hover{background:#39414D}
+  button.primary{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:600}
+  button.primary:hover{background:var(--brand-deep)}
+  button.ghost{background:transparent}
+  button.small{padding:5px 10px;font-size:13px;border-radius:8px}
+  button.danger{color:var(--bad);border-color:rgba(248,113,113,.35)}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  /* 下载用 <a> 而不是 button：浏览器原生「另存为」不需要额外 JS */
+  a.btnlike{display:inline-block;text-decoration:none;color:var(--ink);
+    border:1px solid var(--line);background:var(--card-hi);padding:5px 10px;
+    font-size:13px;border-radius:8px;margin-right:6px}
+  a.btnlike:hover{background:#39414D}
+
+  input,select,textarea{font:inherit;background:#1A1E24;border:1px solid var(--line);color:var(--ink);
+    border-radius:10px;padding:9px 12px;width:100%;outline:none}
+  input:focus,select:focus,textarea:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(76,141,255,.15)}
+  /* 日期选择器：跟旁边的小按钮同高，日历图标在深色底上反色（默认是黑图标，看不见） */
+  input[type=date]{color-scheme:dark;width:auto;padding:5px 10px;font-size:13px;border-radius:8px}
+  input[type=date]::-webkit-calendar-picker-indicator{filter:invert(.75);opacity:.8;cursor:pointer}
+  input[type=date]::-webkit-calendar-picker-indicator:hover{opacity:1}
+  label.f{display:block;font-size:13px;color:var(--ink3);margin-bottom:6px}
+  .field{margin-bottom:14px}
+  .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px}
+
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--ink3);font-weight:500;font-size:12.5px;text-transform:uppercase;letter-spacing:.6px}
+  /* 版本列表：每行有「版本名 + 包名」和堆叠的状态标签，顶部对齐会显得错位 */
+  table.mid th, table.mid td{vertical-align:middle}
+  tbody tr:hover{background:rgba(255,255,255,.02)}
+  .tag{display:inline-block;padding:2px 8px;border-radius:6px;font-size:12px;background:var(--card-hi);
+    color:var(--ink2);white-space:nowrap}
+  .tag.l1{background:rgba(74,222,128,.14);color:#8CEBAE}
+  .tag.l2{background:rgba(251,191,36,.14);color:#F5CE6B}
+  .tag.l3{background:rgba(248,113,113,.14);color:#F79C9C}
+
+  .toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);
+    background:#2E353F;border:1px solid var(--line);border-radius:12px;padding:11px 20px;font-size:14px;
+    opacity:0;pointer-events:none;transition:.22s;z-index:60;box-shadow:0 12px 30px rgba(0,0,0,.45)}
+  .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+  .toast.err{border-color:rgba(248,113,113,.5);color:#F79C9C}
+
+  /* 日志里点「答题」看题目原文：一个居中的弹层，不做右侧抽屉 —— 手机上更好读 */
+  .modal{position:fixed;inset:0;z-index:70;display:flex;align-items:center;justify-content:center;
+    padding:24px;background:rgba(8,10,14,.74)}
+  .modal.hidden{display:none}
+  .modal-card{width:100%;max-width:760px;max-height:84vh;overflow:auto;background:var(--card);
+    border:1px solid var(--line);border-radius:16px;padding:20px 22px 22px;
+    /* 内容偶尔超过 84vh，原生那条浅灰滚动条在深色卡片里太扎眼：藏掉，
+       滚轮 / 触摸 / 键盘 / 拖拽依旧能滚，只是不画那根竖条 */
+    scrollbar-width:none;-ms-overflow-style:none;overscroll-behavior:contain}
+  .modal-card::-webkit-scrollbar{width:0;height:0}
+  tr.hit{cursor:pointer}
+  tr.hit:hover td{background:rgba(76,141,255,.08)}
+  .q-prompt{font-size:19px;line-height:1.62;margin:14px 0 16px}
+  .q-opt{display:flex;gap:10px;align-items:flex-start;padding:10px 14px;border-radius:10px;
+    background:#1D2229;border:1px solid transparent;margin-bottom:8px;font-size:15px;color:var(--ink2)}
+  .q-opt.ok{background:rgba(74,222,128,.10);border-color:rgba(74,222,128,.42);color:var(--ok)}
+  .q-opt.bad{background:rgba(248,113,113,.10);border-color:rgba(248,113,113,.42);color:var(--bad)}
+  .q-opt .mk{width:16px;flex:none;font-weight:700}
+  .q-opt .who{margin-left:auto;font-size:12px;color:var(--ink3);white-space:nowrap}
+  .q-note{margin-top:14px;padding:12px 14px;border-radius:10px;background:#1D2229;
+    font-size:14px;color:var(--ink2);line-height:1.9}
+
+  /* 登录 */
+  .login{position:fixed;inset:0;display:grid;place-items:center;background:var(--bg);z-index:50;padding:20px}
+  .login .card{width:100%;max-width:360px;padding:26px}
+  /* 备忘文件路径很长，不折断会顶到卡片右边的按钮上 */
+  #pwdMeta code, .modal-card code{word-break:break-all}
+  .login h2{margin:0 0 6px;font-size:19px;color:var(--ink)}
+  .login h2::after{display:none}
+
+  .hidden{display:none !important}
+  .empty{color:var(--ink3);font-size:14px;padding:18px 0;text-align:center}
+  details{border:1px solid var(--line);border-radius:var(--radius);background:var(--card);padding:14px 18px;margin-top:14px}
+  summary{cursor:pointer;color:var(--ink2);font-size:14px;font-weight:600}
+  .rowgap{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  code{background:#1A1E24;padding:2px 6px;border-radius:5px;font-size:12.5px;color:#9EC1FF}
+
+  /* 学科 */
+  .chk{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:10px;
+    background:#1A1E24;border:1px solid var(--line);cursor:pointer;transition:.15s;font-size:14px}
+  .chk:hover{border-color:#4A5464}
+  .chk.on{border-color:var(--brand);box-shadow:0 0 0 3px rgba(76,141,255,.12)}
+  .chk input{width:auto;margin:0}
+  .chk .cnt{color:var(--ink3);font-size:12.5px}
+  /* 当前范围内一道题都没有的学科：淡一点，提示家长勾了也抽不到题 */
+  .chk.zero{opacity:.45}
+  .chip{display:inline-flex;align-items:center;gap:6px;padding:6px 13px;border-radius:999px;
+    background:#1A1E24;border:1px solid var(--line);cursor:pointer;font-size:13.5px;color:var(--ink2);
+    transition:.15s;white-space:nowrap}
+  .chip:hover{border-color:#4A5464;color:var(--ink)}
+  .chip.on{background:rgba(76,141,255,.14);border-color:rgba(76,141,255,.55);color:#fff;font-weight:600}
+  .chip .n{font-size:12px;color:var(--ink3);font-weight:400}
+  .chip.on .n{color:#A9C6FF}
+  .sdot{width:8px;height:8px;border-radius:50%;flex:0 0 auto}
+  .tag.sub{background:rgba(255,255,255,.06)}
+  td.hint{font-size:13px;line-height:1.5;color:var(--ink3);white-space:nowrap;overflow:hidden;
+    text-overflow:ellipsis;max-width:252px}
+  .cellnote{font-size:12.5px;line-height:1.45}
+  .hintline,.expline{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:234px}
+  .expline{color:#66707C;margin-top:2px}
+
+  /* ---------- 题库列表 ---------- */
+  /* 以前「停用 / 清记录 / 删」挤在 120px 宽的列里，三个按钮竖着堆，每条被撑到 ~110px 高，
+     一页 20 道要滑很久才看得完。现在按钮横排成一行、行内元素垂直居中，行高降到 ~46px。 */
+  .qtable{min-width:920px;table-layout:fixed}
+  .qtable td{vertical-align:middle;padding:9px 10px}
+  .qtable th{padding:8px 10px}
+  /* 固定列宽后题干拿剩余宽度：窄屏（手机）先整表横向滚动，别把「37 - 23 = ?」压成两行 */
+  .qtable .qstem{overflow-wrap:anywhere}
+  .qtable .qstem b{font-weight:500}
+  .qacts{display:flex;gap:6px;justify-content:flex-end;white-space:nowrap}
+  .qacts button{padding:5px 9px;font-size:12.5px;line-height:1.2}
+  /* 多选：勾中整行淡蓝底，扫一眼就知道哪几条会被批量操作 */
+  .qpick{width:16px;height:16px;accent-color:var(--brand);cursor:pointer;vertical-align:middle;margin:0}
+  .qtable tr.qsel td{background:rgba(76,141,255,.10)}
+  /* 没点「批量操作」时勾选列整列收起来：不选就看不到复选框，列表更干净 */
+  .qtable.nopick th:first-child,.qtable.nopick td:first-child{display:none}
+  #qAll{margin:0}
+  .stars{color:#F5CE6B;font-size:10.5px;letter-spacing:-1px;opacity:.85}
+  /* 批量工具栏里的四个动作：没勾任何题时按不动，避免点了没反应 */
+  #qBatchBar button:disabled{opacity:.4;cursor:not-allowed}
+  /* 批量导入：输入框占满一行，「开始导入」压在右下角；底部留出空白，长文本不会钻到按钮底下 */
+  /* 批量导入：标题 + 说明图标 + 文件导入 排成一条线，按钮落在输入框下方右端 */
+  .impsum{display:flex;align-items:center;gap:10px}
+  .impname{display:inline-flex;align-items:center;gap:8px;min-width:0}
+  .impbody{margin-top:12px}
+  .impbody textarea{min-height:150px;resize:vertical;line-height:1.65}
+  .impfoot{display:flex;align-items:center;gap:12px;justify-content:flex-end;flex-wrap:wrap;margin-top:12px}
+  .impfoot #impMsg{flex:1;min-width:0;font-size:12.5px;line-height:1.5;color:var(--ink3)}
+  .impfoot #impBtn{flex:none;white-space:nowrap}
+  /* 收起时标题行不给「选择文件导入」占位，避免误点 */
+  #dImp:not([open]) .impfile{display:none}
+
+  /* 首页里题库入口：一行高的卡片，点哪都能进 */
+  .bank-entry{cursor:pointer;transition:.15s}
+  .bank-entry:hover{border-color:rgba(76,141,255,.45);background:#262C35}
+
+  /* 二级页的页头（返回 + 标题 + 操作） */
+  .pagebar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:0 0 18px}
+  .pagebar h1{font-size:18px}
+  .pagebar .sub{margin-top:1px}
+
+  /* 分页条：题库和日志共用 */
+  .pager{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;
+    padding-top:16px;margin-top:2px;border-top:1px solid rgba(255,255,255,.05)}
+  .pager .info{color:var(--ink3);font-size:13px;padding:0 6px;white-space:nowrap}
+  .pager button:disabled{opacity:.32;cursor:not-allowed}
+  .pager button:disabled:hover{border-color:var(--line);background:var(--card-hi)}
+
+  /* 时段网格 */
+  /* 48 格一行塞不进手机屏，所以永远是「横向滚动 + 拖涂」二选一：
+     默认 touch-action:pan-x 让手指能左右滑（以前写死 none，手机上后半段时间根本滑不到，
+     又没有滚动条，等于设不了）；
+     真正要连续涂格子时由 JS 临时加 .painting 把滚动冻结，涂完再放开。 */
+  .sched{overflow-x:auto;overflow-y:hidden;padding-bottom:10px;
+    touch-action:pan-x;-webkit-overflow-scrolling:touch;
+    user-select:none;-webkit-user-select:none;
+    /* 手机浏览器默认不画滚动条，这里显式给一条细的，暗示「右边还有」 */
+    scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.3) rgba(255,255,255,.06)}
+  .sched.painting{touch-action:none;cursor:crosshair}
+  .sched::-webkit-scrollbar{height:8px}
+  .sched::-webkit-scrollbar-track{background:rgba(255,255,255,.06);border-radius:4px}
+  .sched::-webkit-scrollbar-thumb{background:rgba(255,255,255,.3);border-radius:4px}
+  .sched::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.5)}
+  .sched-inner{min-width:700px}
+  /* 列宽用 1fr 撑满整张卡片，右侧不再留一大片空白 */
+  .sched-hours,.sched-row{display:grid;grid-template-columns:46px repeat(48,1fr);gap:3px;align-items:center}
+  .sched-hours{margin-bottom:6px}
+  .sched-hour{font-size:11.5px;color:var(--ink3);white-space:nowrap;padding-left:1px}
+  .sched-row{margin-bottom:3px}
+  /* 日期列吸左：手机滑到 20:00 那一段时，仍然知道自己在哪一行 */
+  .sched-day{font-size:12.5px;color:var(--ink2);text-align:right;padding-right:4px;white-space:nowrap;
+    position:sticky;left:0;z-index:2;background:var(--card);
+    box-shadow:6px 0 8px -6px rgba(0,0,0,.55)}
+  .sched-cell{height:28px;border-radius:5px;background:#1A1E24;cursor:pointer;
+    border:1px solid rgba(255,255,255,.05);transition:background .08s}
+  .sched-cell.on{background:rgba(76,141,255,.8);border-color:rgba(76,141,255,.9)}
+  .sched-cell:hover{border-color:rgba(255,255,255,.35)}
+  .sched-cell.hit{outline:2px solid rgba(255,255,255,.5);outline-offset:-2px}
+  .starbox{display:flex;align-items:center;gap:6px}
+  .starbox span{font-size:12.5px;color:var(--ink3);white-space:nowrap}
+  .starbox input{width:58px;padding:6px 8px;text-align:center}
+
+  /* 三台以上走窄卡片：kv 是一行两端对齐，开关不要额外上边距 */
+  .kv > .switchrow{margin-top:0}
+  .grid.one .devstats .kv > .switchrow, .grid.two .devstats .kv > .switchrow{margin-top:7px}
+
+  /* ---------- 电视画面照片墙：叠放浏览（互相压 2/3，只露 1/3 供选择） ---------- */
+  #shotWall{display:flex;align-items:flex-start;overflow-x:auto;overflow-y:visible;
+    padding:22px 2px 38px;scroll-behavior:smooth;-webkit-overflow-scrolling:touch}
+  #shotWall:empty{display:none}
+  .shotItem{position:relative;flex:0 0 auto;margin:0;width:320px;cursor:pointer;
+    transition:transform .18s ease,box-shadow .18s ease}
+  /* 后一张左移 2/3 卡宽 → 每张只露 1/3（约 107px）当作选择条 */
+  .shotItem + .shotItem{margin-left:-213px}
+  .shotItem img{display:block;width:100%;border-radius:10px;background:#000;
+    border:1px solid rgba(255,255,255,.1);box-shadow:0 10px 24px rgba(0,0,0,.5)}
+  /* 时间标签：露出的 1/3 放不下，悬停/最新那张才显示 */
+  .shotItem figcaption{position:absolute;left:2px;bottom:-23px;font-size:12.5px;
+    color:var(--ink3);white-space:nowrap;opacity:0;transition:opacity .16s;pointer-events:none}
+  .shotItem.first figcaption,.shotItem:hover figcaption{opacity:1}
+  /* 悬停放大并抬到最上层，挡住邻居也能看清整张 */
+  .shotItem:hover{transform:scale(1.18) translateY(-4px);z-index:9999!important}
+  .shotItem:hover img{border-color:rgba(255,255,255,.42);box-shadow:0 20px 44px rgba(0,0,0,.7)}
+  /* 最新那张加描边，一眼认出是当前画面 */
+  .shotItem.first img{border:2px solid rgba(76,141,255,.9)}
+
+  /* 点击后的全屏预览 */
+  #shotViewer{position:fixed;inset:0;z-index:99999;display:none;align-items:center;justify-content:center;
+    background:rgba(6,8,12,.93);padding:26px}
+  #shotViewer.on{display:flex}
+  #shotViewer #shotViewerImg{max-width:92vw;max-height:82vh;border-radius:12px;
+    border:1px solid rgba(255,255,255,.14);box-shadow:0 26px 64px rgba(0,0,0,.75)}
+  #shotViewer .cap{position:absolute;left:0;right:0;bottom:20px;text-align:center;
+    color:#c9d2e0;font-size:13.5px}
+  #shotViewer .nav{position:absolute;top:50%;transform:translateY(-50%);width:46px;height:46px;
+    border-radius:50%;border:1px solid rgba(255,255,255,.18);background:rgba(20,24,32,.72);
+    color:#e6ecf5;font-size:26px;line-height:1;cursor:pointer}
+  #shotViewer .nav:hover{background:rgba(40,48,62,.92)}
+  #shotViewer .nav.prev{left:18px}
+  #shotViewer .nav.next{right:18px}
+
+  /* ---------- 图标悬浮提示：重要说明收进小图标，点击 / 悬停弹出 ----------
+     用法：<i class="hicon" tabindex="0" data-tip="说明（可含 HTML）">i</i>
+     警告型加 class="hicon warn"，图标内容写 ! ；交互逻辑在 core.js 尾部。 */
+  .hicon{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;
+    width:17px;height:17px;border-radius:50%;background:#333B46;border:1px solid var(--line);
+    color:var(--ink2);font-style:normal;font-size:11.5px;font-weight:700;line-height:1;
+    cursor:pointer;user-select:none;-webkit-user-select:none;vertical-align:-3px;transition:.15s}
+  .hicon:hover,.hicon.on{background:var(--brand);border-color:var(--brand);color:#fff}
+  .hicon.warn{background:rgba(251,191,36,.10);border-color:rgba(251,191,36,.35);color:#F5CE6B}
+  .hicon.warn:hover,.hicon.warn.on{background:var(--warn);border-color:var(--warn);color:#1A1E24}
+  .hicon:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+  .tipbox{position:fixed;z-index:99998;max-width:340px;background:var(--card-hi);
+    border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:13px;color:var(--ink2);
+    line-height:1.8;box-shadow:0 14px 36px rgba(0,0,0,.55);
+    opacity:0;pointer-events:none;transform:translateY(4px);transition:opacity .16s,transform .16s}
+  .tipbox.on{opacity:1;pointer-events:auto;transform:none}
+  .tipbox b{color:var(--ink)} .tipbox code{font-size:12px}
+
+  /* 设备卡「后台保活」：设备管理员 + 无障碍两行并进同一个格子 */
+  .keep{display:flex;flex-direction:column;gap:7px;min-width:0}
+  .keep .switchrow{margin-top:0}
+  .keep em{font-size:12.5px;white-space:nowrap}
+
+  /* ---------- 自适应：窄屏（手机 / 平板竖屏） ---------- */
+  @media (max-width:900px){
+    .wrap{padding:20px 14px 64px}
+    header{gap:10px}
+  }
+  @media (max-width:700px){
+    header{margin-bottom:18px}
+    header .logo{width:32px;height:32px;font-size:16px;border-radius:9px}
+    h1{font-size:17px}
+    h2{margin:24px 0 12px}
+    .card{padding:14px}
+    .grid{grid-template-columns:1fr}
+    /* 输入框字号 16px：iOS Safari 聚焦时不会自作主张放大整页 */
+    input,select,textarea{font-size:16px}
+    button{padding:9px 14px}
+    button.small{padding:7px 11px;font-size:13px}
+    .cols{gap:10px}
+    .pagebar{gap:10px}
+    .pagebar h1{font-size:16px}
+    /* 题库表在手机上本来就得横滑，先把「提示 / 解析」收起来（编辑弹窗里也能看到），少滑一点 */
+    .qtable th:nth-child(8), .qtable td:nth-child(8){display:none}
+    .qtable{min-width:820px}
+    .qacts button{padding:5px 8px;font-size:12px}
+    /* 时段网格：手机上一屏只放得下三分之一，靠左右滑动看后面的时间。
+       标签列收窄、格间距压到 2px，把省出来的宽度让给格子（约 12px 一格，好点也不好误触）。 */
+    .sched-hours,.sched-row{grid-template-columns:30px repeat(48,1fr);gap:2px}
+    .sched-day{font-size:11.5px;padding-right:2px}
+    .sched-hour{font-size:10.5px}
+    .sched-cell{height:26px;border-radius:4px}
+    .modal{padding:10px}
+    .modal-card{padding:16px;max-height:90vh;border-radius:14px}
+    /* 照片墙：卡片宽度跟屏宽走，仍只露 1/3 当选择条（2/3 卡宽 = 52vw） */
+    .shotItem{width:78vw}
+    .shotItem + .shotItem{margin-left:-52vw}
+    #shotViewer{padding:14px}
+    #shotViewer #shotViewerImg{max-height:74vh}
+    #shotViewer .nav{width:40px;height:40px;font-size:22px}
+    #shotViewer .nav.prev{left:8px}
+    #shotViewer .nav.next{right:8px}
+  }

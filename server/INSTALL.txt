@@ -1,0 +1,141 @@
+TvGuard 管理端 —— Docker 部署 + 后台一键升级
+==========================================
+
+【部署：docker compose】
+1. 把 Dockerfile、docker-compose.yml、package.json、src/、public/
+   放进同一个目录，docker-compose.yml 必须直接躺在这一层，不能多套一层：
+
+   正确：                          错误（解压 zip 常会这样）：
+   tvguard-server/                 tvguard-server/
+     docker-compose.yml              tvguard-server/
+     Dockerfile                        docker-compose.yml
+     package.json                      Dockerfile
+     src/                              src/
+     public/                           public/
+
+2. 改密码：编辑 docker-compose.yml，找到
+       ADMIN_PASSWORD: "ChangeMe_2026"
+   把引号里换成你要的密码（这是占位值，别直接用）。这是首次初始密码；装好后建议在后台
+   右上角「管理密码」→「修改密码」改掉（后台改的写进 data/config.json，
+   优先于环境变量，容器重启也不会变回去；之后 compose 里这行不再生效）。
+
+3. 在该目录执行：
+       docker compose up -d
+   首次会拉 node:20-alpine（几十 MB）。compose 是免构建版：不跑 Dockerfile、
+   不装包，改 js 后重启容器即生效。
+
+4. 浏览器打开 http://<宿主机 IP>:8088 ，输入密码进入，
+   点右上角「管理密码」核对一遍。
+
+注：compose 默认 network_mode: host，容器直接监听 PORT=8088，不需要 ports
+映射。host 模式是为了让容器能访问局域网里电视的 adb 5555 端口，并让服务端
+看到电视的真实来源 IP。改成 bridge + 端口映射会让截图 / 离线唤醒 /
+保活修复失效 —— 详见下面「网络」一节。
+
+
+【日常升级：不用再进服务器】
+管理端右上角「服务端升级」→ 选升级包 .zip → 建议先点「① 只预检」
+→ 再点「② 备份并升级」。服务端会自己完成：
+  解包到暂存区 → 校验结构 + 全部 JS 语法 → 整份备份现有 src/ 与 public/
+  → 覆盖 → 自动重启（靠 compose 的 restart: unless-stopped，约 5~10 秒）。
+写入中途出错会自动回滚；升级后也能在页面上点「回滚上一版」。
+备份在 ./data/backup/<时间>/，保留最近 3 份。
+
+安全边界：升级包只写 src/ 和 public/，永远不碰 data/（策略、题库、
+设备、密码、adb 密钥都在这里）。docker-compose.yml / Dockerfile 属于
+宿主机文件，容器改不动，需要变更时仍要手工覆盖一次。
+
+万一升级包有隐藏问题导致容器反复重启、后台打不开：
+  进 ./data/backup/<最新时间>/，把里面的 src/ 和 public/
+  拷回部署目录覆盖，再 docker compose restart 即可。
+
+升级包用 pack.py 生成，zip 内路径为正斜杠（src/app.js）。
+以前用 PowerShell 打包会写成 src\app.js，部分解压工具不认目录，
+会出现「解压后全部平铺在一个目录里」，现已根治。
+
+
+【常见问题】
+一直停在构建中 / 报 TLS handshake timeout
+  → 拉不到镜像，国内网络最常见。配置 Docker 镜像加速（如
+    https://docker.m.daocloud.io）后重试，或先手动 docker pull node:20-alpine。
+
+报 no such file or directory / Cannot locate Dockerfile
+  → 目录层级错了，回到最上面那条看结构。
+
+报 port is already allocated
+  → 8088 被别的服务占了。host 模式下改 environment 里的 PORT；
+    若改用 ports 映射，改左边端口（如 "8090:8088"）。
+
+想让我帮你看：在部署目录执行这两条，把输出发我
+  ls -la
+  docker compose logs --tail=50 tvguard-admin
+
+
+【改端口 / 改密码 / 备份】
+改端口：默认 host 模式，改 environment 里的 PORT；用 ports 映射时改左边数字。
+改密码：登录后台 → 右上角「管理密码」→「修改密码」，填当前密码 + 新密码。
+忘记密码：./data/admin-password.txt 里一直留着当前生效的密码；
+         或看 docker logs tvguard-admin 的启动日志。
+数据备份：拷走 ./data 整个目录即可（含题库、策略、统计、密码备忘）。
+
+
+【保活自动修复（自带，无需配置）】
+  电视上报「无障碍没开 / 设备管理员没激活」或刚完成升级时，
+  管理端会自动通过电视的网络调试口（adb，端口 5555）远程修复，
+  不用再开电脑敲命令。设备卡上也有「立即修复」按钮。
+
+  唯一要做的可能是一次授权：第一次连电视时，如果电视屏幕弹出
+  「允许 USB 调试吗？」，用遥控器点一次允许即可，之后永久记住。
+  想跳过这一步：把电脑上（已授权过的）adb 私钥放进 ./data/，两种形式都认：
+    - adb_key.json：服务端自己的密钥文件（{"privatePem":"...","name":"..."}），
+      直接上传整份文件覆盖即可（推荐，不要用文本编辑器手工改内容，
+      编辑器引入的 BOM/引号差异会让解析失败，服务端会重新生成一把
+      电视不认识的新钥匙，越试越连不上）；
+    - adb_key：电脑上 C:\Users\<你>\.android\adbkey 那份纯 PEM 文件，
+      直接复制过来。
+  上传后不用重启容器，下一次连接立即生效。
+
+
+【电视画面截屏（后台首页「电视画面」区）】
+  「立即截图」随时可点；「自动截屏」打开后每 10 秒一张、只保留最近 5 分钟，
+  超时自动删除。截图存在 ./data/shots/，不上传任何第三方。
+
+  截图失败时先点「截图自检」：它会逐项检查密钥、5555 端口、adb 授权、
+  screencap、PNG/JPEG 压缩、目录写权限，直接告诉你卡在哪一步。
+  最常见的原因是服务端自己生成了一把电视没授权过的钥匙 —— 展开
+  「截图失败排查 / 同步 adb 密钥」，把电脑上已授权的
+  C:\Users\<你>\.android\adbkey 整份上传即可（也认服务端的 adb_key.json），
+  不用在文本编辑器里手改文件，上传后下一次连接立即生效、无需重启。
+
+
+【网络：Docker 部署最容易踩的坑（compose 已默认处理）】
+  容器用默认 bridge 网络 + 端口映射时，外部请求进容器后源地址会被 NAT 成
+  Docker 网桥网关（例如 172.23.0.1），并不是电视。服务端若把它当成电视 IP，
+  adb 去连「网关:5555」必然失败 —— 电视的网络调试其实开着。
+  自检会直接指出这一点（「只看到 Docker 网关 xxx，不是电视」）。
+
+  两种解法：
+    ① 电视端每次心跳都会上报自己的局域网 IP，服务端优先采用（推荐，全自动）。
+       这不是写死：DHCP 给电视换了地址，30 秒内自动同步，
+       并在「最近事件」里记一条 IP 变更。
+    ② 后台「电视画面 → 截图失败排查 → 电视 IP」或设备卡「电视 IP → 改」，
+       填一次电视真实局域网 IP（如 192.168.1.73），截图和离线唤醒立刻恢复，
+       不用重建容器。手动值只是初始播种，电视一旦上报真实 IP 就自动接管并清掉
+       手动值；留空则回到自动识别。
+
+  ★ 但光把 IP 改对还不够：实测默认 bridge 网络**出不到局域网**，容器内
+    TCP 连不上电视 192.168.1.73:5555，截图 / 离线唤醒 / 保活修复照样全废。
+    所以 docker-compose.yml 默认就是 network_mode: host（不再要 ports 映射）。
+    改过网络后必须重建容器：
+        docker compose up -d --force-recreate
+    注意：**只点「重启」不会换网络**。重建后容器直接用宿主机网络栈，
+    能连电视 5555、看到的源 IP 也是电视真实地址，172.x.x.x 网关地址不会再出现。
+    自检里「容器网络（根因）」一项会列出容器网卡，可用来确认是否已生效。
+
+
+【保活检测节奏】
+  电视每 30 秒上报一次心跳，管理端每 20 秒巡检一次；连续 90 秒没心跳判离线
+  并自动通过 adb 拉起守护服务（不抢前台），唤醒失败每 2 分钟重试。
+  进程级看门狗 60 秒一次。设备卡每 20 秒自动刷新。
+
+详细说明见同目录 README.md。

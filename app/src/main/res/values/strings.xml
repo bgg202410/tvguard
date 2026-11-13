@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">守时桌面</string>
+    <string name="home_hint">按 OK 打开</string>
+    <string name="quiz_hint">休息一下，答对才能继续</string>
+    <string name="quiz_out_of_time">今天的额度用完了</string>
+    <string name="quiz_correct">答对了，可以继续看</string>
+    <string name="quiz_wrong">答错了，%1$d 秒后换一道新题</string>
+    <string name="quiz_confirm">确定</string>
+    <string name="quiz_continue">继续</string>
+    <string name="quiz_offline">连不上管理端，先看吧</string>
+    <string name="quiz_retry">网络不太顺，正在重试（第 %1$d 次），先别走开</string>
+    <string name="quiz_submit_fail">答案没传上去，换一道题重新答</string>
+    <string name="lock_title">现在不能看电视</string>
+    <string name="lock_next">稍后会自动恢复</string>
+    <string name="lock_reward_btn">答题换时长</string>
+    <string name="parent_entry">家长</string>
+
+    <string name="gate_title">家长验证</string>
+    <string name="gate_reason_home">要回系统主页，请输入管理密码</string>
+    <string name="gate_reason_exit">要退出守时桌面，请输入管理密码</string>
+    <string name="gate_reason_diag">要打开连接设置，请输入管理密码</string>
+    <string name="gate_hint">管理密码</string>
+    <string name="gate_pwd_empty">用遥控器输入密码</string>
+    <string name="gate_del">删除</string>
+    <string name="gate_clear">清空</string>
+    <string name="gate_ok">验证放行</string>
+    <string name="gate_cancel">留在桌面</string>
+    <string name="gate_empty">请先输入密码</string>
+    <string name="gate_checking">正在验证…</string>
+    <string name="gate_wrong">密码不对，再试一次</string>
+    <string name="gate_passed">验证通过</string>
+    <string name="gate_where">接下来去哪里？（15 秒不动就回守时桌面）</string>
+    <string name="gate_stay">返回守时桌面</string>
+    <string name="gate_sys">进入系统桌面</string>
+    <string name="gate_auto_back">%1$d:%2$02d 后自动返回守时桌面</string>
+    <string name="gate_foot">密码就是管理端登录用的那个，忘了可以在管理端「管理密码」里查看或重置</string>
+
+    <!-- 自升级 -->
+    <string name="home_recent">最近使用</string>
+    <string name="home_all_apps">全部应用</string>
+    <string name="a11y_desc">让守时桌面在后台稳定运行，不被系统清理。本服务不读取屏幕内容，只用于保持计时不中断。</string>
+    <string name="a11y_summary">守时桌面保活（不读取屏幕内容）</string>
+    <string name="upd_title">发现新版本</string>
+    <string name="upd_version">v%1$s · %2$s</string>
+    <string name="upd_tip">管理端发布了新版本，现在升级就能用上修好的功能。\n最后一步要用遥控器点一下「安装」，系统不允许应用自己装自己。</string>
+    <string name="upd_checking">正在查询新版本…</string>
+    <string name="upd_none">已经是最新版本</string>
+    <string name="upd_downloading">下载中 %1$d%%</string>
+    <string name="upd_installing">下载完成，正在打开安装程序…</string>
+    <string name="upd_need_confirm">请在电视上用遥控器点「安装」；如果提示被禁止，去设置里允许本应用「安装未知应用」</string>
+    <string name="upd_failed">下载失败，检查网络后重试</string>
+    <string name="upd_install_failed">打不开安装程序：%1$s</string>
+    <string name="upd_now">立即升级</string>
+    <string name="upd_later">稍后</string>
+    <!-- 保活向导 -->
+    <string name="keep_title">保持后台运行</string>
+    <string name="keep_intro">这台电视会清理后台应用。被清掉之后计时和答题提醒都会停，\n所以建议把下面几项都打开（只需要设置一次）。</string>
+    <string name="keep_open_a11y">开启无障碍保活</string>
+    <string name="keep_open_guard">打开安全软件</string>
+    <string name="keep_open_battery">加入电池白名单</string>
+    <string name="keep_back">返回桌面</string>
+    <string name="keep_a11y_on">无障碍服务：已开启（后台不容易被清）</string>
+    <string name="keep_a11y_off">无障碍服务：未开启 —— 后台随时可能被清理</string>
+    <string name="keep_battery_on">电池优化白名单：已加入</string>
+    <string name="keep_battery_off">电池优化白名单：未加入</string>
+    <string name="keep_no_page">这台电视没有这个设置页，可以在系统设置里手动找「无障碍」</string>
+    <string name="keep_all_done">都设置好了，可以放心看了</string>
+    <string name="keep_open_admin">激活设备管理员</string>
+    <string name="keep_admin_on">设备管理员：已激活（系统不允许强制停止本应用）</string>
+    <string name="keep_admin_off">设备管理员：未激活 —— 后台随时可能被清理</string>
+    <string name="keep_admin_done">设备管理员已激活</string>
+    <string name="keep_watch_dog">另外每 3 分钟有一次自检，被清掉最多 3 分钟就能自己回来。</string>
+    <string name="keep_guard_tip">在安全软件里把守时桌面设为允许后台运行，然后返回。</string>
+    <string name="keep_guard_missing">没找到安全软件，可在系统设置的应用管理里找「自启动 / 后台运行」。</string>
+
+    <string name="keep_owner_on">Profile Owner：已持有，系统放行「隐藏应用」权限</string>
+    <string name="keep_owner_no_perm">Profile Owner：已持有，但系统不放行「隐藏应用」（%1$s）</string>
+    <string name="keep_owner_off">Profile Owner：未持有 —— 需要 adb 执行 dpm set-profile-owner 后才能屏蔽安全软件</string>
+    <string name="keep_killers_all">厂商清理工具：已全部屏蔽 —— 不会再杀后台、清无障碍</string>
+    <string name="keep_killers_none">厂商清理工具：未屏蔽 —— 正在周期性杀后台</string>
+    <string name="keep_killers_part">厂商清理工具：已屏蔽 %1$s；仍在运行：%2$s</string>
+    <string name="keep_btn_health_hide">屏蔽清理工具（治本）</string>
+    <string name="keep_btn_health_show">恢复清理工具</string>
+    <string name="keep_health_done">清理工具已全部屏蔽，它们再也不能杀守时桌面了；每分钟会自动检查一次，被系统偷着恢复的会被重新屏蔽。</string>
+    <string name="keep_health_show_done">清理工具已恢复运行。</string>
+    <string name="keep_health_fail">操作失败：%1$s</string>
+    <string name="home_keep_alive">⚠ 开启后台保活</string>
+    <string name="home_settings">⚙ 连接设置</string>
+    <string name="home_settings_need">⚠ 设置管理端地址</string>
+
+    <string name="notice_title">家长留言</string>
+    <string name="notice_close">知道了</string>
+</resources>

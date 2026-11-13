@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>守时桌面 · 管理端</title>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<div class="login" id="loginView">
+  <div class="card">
+    <h2>守时桌面 · 管理端</h2>
+    <div class="muted" style="margin-bottom:18px">输入家长密码进入</div>
+    <div class="field">
+      <input id="pwd" type="password" placeholder="管理密码" autocomplete="current-password">
+    </div>
+    <button class="primary" style="width:100%" id="loginBtn">进入</button>
+    <div class="muted" id="loginErr" style="margin-top:12px;color:#F79C9C;min-height:20px"></div>
+    <div class="muted" id="loginHint" style="font-size:12.5px"></div>
+  </div>
+</div>
+
+<div class="wrap hidden" id="appView">
+  <header>
+    <div class="logo">守</div>
+    <div>
+      <h1>守时桌面 · 管理端</h1>
+      <div class="sub" id="hostLine">正在连接…</div>
+    </div>
+    <div class="spacer"></div>
+    <div class="pill" title="浏览器 ↔ 管理端服务器的连接状态，和电视在不在线无关">
+      <span class="dot" id="srvDot"></span><span id="srvText">服务器</span></div>
+    <button class="small" id="bankBtn" title="进入题库管理">题库管理</button>
+    <button class="ghost small" id="apkBtn" title="上传客户端 APK、回退历史版本">客户端版本</button>
+    <button class="ghost small" id="srvUpgradeBtn" title="上传 zip 一键升级管理端（自动备份、可回滚）" onclick="location.href='/admin/upgrade'">管理端升级</button>
+    <button class="ghost small" id="pwdBtn" title="查看当前生效的管理密码">管理密码</button>
+    <button class="ghost small" id="logoutBtn">退出</button>
+  </header>
+
+  <div class="card hidden" id="pwdCard" style="margin-bottom:18px">
+    <div class="rowgap" style="justify-content:space-between">
+      <div>
+        <div class="muted" style="font-size:12.5px;margin-bottom:6px">当前生效的管理密码</div>
+        <div style="font-size:20px;font-weight:600;letter-spacing:.5px;color:var(--ink)">
+          <span id="pwdValue">••••••</span>
+        </div>
+        <div class="muted" style="font-size:12.5px;margin-top:8px" id="pwdMeta"></div>
+      </div>
+      <div class="rowgap">
+        <button class="primary small" id="pwdEdit">修改密码</button>
+        <button class="small" id="pwdReveal">显示</button>
+        <button class="small" id="pwdCopy">复制</button>
+        <button class="small" id="pwdClose">收起</button>
+      </div>
+    </div>
+    <!-- 登录有效期：后台直接可改、持久化；改完立即生效，其它设备被迫重新登录 -->
+    <div class="rowgap" style="margin-top:14px;align-items:center;gap:8px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:12px">
+      <span class="muted" style="font-size:12.5px">登录有效期</span>
+      <input id="sessHours" type="number" min="0.1" max="720" step="0.5" class="small" style="width:84px">
+      <span class="muted" style="font-size:12.5px">小时（默认 12，0.1~720 可填）</span>
+      <button class="primary small" id="sessSave">保存</button>
+      <span id="sessMsg" class="muted" style="font-size:12px;min-height:16px"></span>
+    </div>
+  </div>
+
+  <!-- 首页：设备 + 策略 + 时段 + 最近事件。题库已经挪到二级页，这里只留一个入口 -->
+  <div id="mainView">
+
+  <h2>电视</h2>
+  <div class="grid" id="devices"></div>
+
+  <div class="row between" style="margin:26px 0 14px">
+    <h2 style="margin:0">留言栏</h2>
+  </div>
+  <div class="card" id="noticeCard">
+    <div class="muted" style="margin-bottom:10px">
+      写一句话推送到客户端
+      <i class="hicon" tabindex="0" data-tip="根据心跳时间推送弹框会有延迟，答题时不弹">i</i>
+    </div>
+    <div class="field">
+      <textarea id="ntText" rows="3" maxlength="200"
+        placeholder="例：今天先写完作业再看电视，六点前回来吃饭。"></textarea>
+      <div class="muted" style="font-size:12.5px;margin-top:6px">
+        <span id="ntCount">0</span>/200 字
+      </div>
+    </div>
+    <div class="rowgap" style="flex-wrap:wrap;align-items:center;margin-bottom:10px">
+      <span class="muted" style="font-size:13px">显示日期</span>
+      <input type="date" id="ntDay" class="small" style="width:160px">
+    </div>
+    <div class="rowgap" style="flex-wrap:wrap">
+      <button class="primary" id="ntPush">开启推送</button>
+      <button class="ghost small" id="ntClear">清空留言</button>
+      <span class="muted" id="ntStat">读取中…</span>
+    </div>
+  </div>
+
+  <!-- 只有一个保存按钮，放在表单末尾（和「启用管控」在一起），
+       标题行不再重复放一个 —— 两个做同一件事容易让人以为有区别 -->
+  <div class="row between" style="margin:34px 0 14px">
+    <h2 style="margin:0">管控策略
+      <span class="tag" id="polDirty" style="display:none;margin-left:10px;color:#F7C97C">● 有未保存的改动</span>
+    </h2>
+  </div>
+  <div class="card" id="policyCard">
+    <div class="cols">
+      <div class="field">
+        <label class="f">每日上网总时长（分钟）</label>
+        <input id="pDaily" type="number" min="10" max="720" step="10" oninput="syncReward()">
+      </div>
+      <div class="field">
+        <label class="f">答题间隔（分钟）</label>
+        <input id="pInterval" type="number" min="1" max="120" step="1">
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="f">出题范围
+        <i class="hicon" tabindex="0" data-tip="难度选择：高等难度包含简单题型。<br>题目权重：错题库 &gt; 优先题目 &gt; 普通题型">i</i>
+      </label>
+      <div class="rowgap" style="margin-bottom:10px">
+        <select id="pGrade" style="width:auto" title="出题年级">
+          <option value="0">不限年级</option>
+          <option value="1">一年级</option><option value="2">二年级</option>
+          <option value="3">三年级</option><option value="4">四年级</option>
+          <option value="5">五年级</option><option value="6">六年级</option>
+        </select>
+        <label class="chk" title="通用题（程序生成的种子题）是否与所选年级的题一起随机抽">
+          <input type="checkbox" id="pIncGeneral">
+          <span style="font-weight:600">包含通用题</span>
+        </label>
+        <select id="pDiff" style="width:auto" title="出题难度（高难度包含低难度）">
+          <option value="0">不限难度</option>
+          <option value="1">简单</option>
+          <option value="2">中等及以上</option>
+          <option value="3">挑战（全部难度）</option>
+        </select>
+      </div>
+      <div class="rowgap" id="pSubjects"></div>
+    </div>
+
+    <div class="cols">
+      <div class="field">
+        <label class="f">放行方式</label>
+        <select id="pQuizMode" onchange="syncMode()">
+          <option value="single">单题：答对一题就放行</option>
+          <option value="group">整组闯关：答完一组且正确率达标才放行</option>
+        </select>
+      </div>
+      <div class="field" id="fGroupSize">
+        <label class="f">每组题量</label>
+        <input id="pGroupSize" type="number" min="1" max="20" step="1">
+      </div>
+      <div class="field" id="fPassRate">
+        <label class="f">通过正确率（%）</label>
+        <input id="pPassRate" type="number" min="1" max="100" step="10">
+      </div>
+    </div>
+
+    <div class="cols">
+      <div class="field">
+        <label class="f">答错怎么处理</label>
+        <select id="pWrongPolicy">
+          <option value="retry">换一题继续答（直到答对才放行）</option>
+          <option value="pass">答错也放行，等下一轮再问</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="f">错题优先比例（%）</label>
+        <input id="pWrongBoost" type="number" min="0" max="100" step="10">
+      </div>
+      <div class="field">
+        <label class="f">连对几次算学会</label>
+        <input id="pWrongGrad" type="number" min="1" max="10" step="1">
+      </div>
+    </div>
+    <!-- 时长用完之后的"续命"机制：默认关，只在基础总时长真用完时才生效 -->
+    <div class="field" style="margin-bottom:8px">
+      <label class="f" style="display:flex;align-items:center;gap:10px;cursor:pointer">
+        <input type="checkbox" id="pRewardOn" style="width:auto" onchange="syncReward()">
+        上网时长用完后，允许答题再换一点时间
+      </label>
+    </div>
+    <div class="cols" id="fReward">
+      <div class="field">
+        <label class="f">答对几题换一次</label>
+        <input id="pRewardCount" type="number" min="1" max="100" step="1" oninput="syncReward()">
+      </div>
+      <div class="field">
+        <label class="f">每次换多少分钟</label>
+        <input id="pRewardMin" type="number" min="1" max="120" step="5" oninput="syncReward()">
+      </div>
+      <div class="field">
+        <label class="f">每天最多换几次</label>
+        <input id="pRewardTimes" type="number" min="1" max="10" step="1" oninput="syncReward()">
+      </div>
+    </div>
+
+    <div class="field" style="margin:0 0 14px">
+      <label class="muted" style="display:flex;align-items:center;gap:8px;cursor:pointer">
+        <input type="checkbox" id="pDeskGuard" style="width:auto">
+        系统桌面拦截
+      </label>
+    </div>
+
+    <div class="rowgap">
+      <button class="primary" id="savePolicy">保存策略</button>
+      <label class="muted" style="display:flex;align-items:center;gap:8px;cursor:pointer">
+        <input type="checkbox" id="pEnabled" style="width:auto"> 启用管控（关闭后电视不再弹题）
+      </label>
+    </div>
+  </div>
+
+  <h2>可用时段 <span class="muted" id="schedStat" style="font-weight:400"></span></h2>
+  <div class="card">
+    <div class="cols" style="margin-bottom:14px">
+      <div class="field" style="margin-bottom:0">
+        <label class="f">时段用途
+          <i class="hicon" id="schedTipIcon" tabindex="0" data-tip="">i</i>
+        </label>
+        <select id="pSchedMode" onchange="syncMode()">
+          <option value="off">不限时段（全天只看总时长）</option>
+          <option value="quizOnly">时段内答题解锁，时段外免答且不扣时长</option>
+          <option value="block">时段外禁用电视，时段内才可用</option>
+        </select>
+      </div>
+    </div>
+    <div class="rowgap" style="margin-bottom:10px">
+      <button class="small" onclick="applySchedTemplate('all')">全天开放</button>
+      <button class="small" onclick="applySchedTemplate('evening')">放学后 17–21 点</button>
+      <button class="small" onclick="applySchedTemplate('weekend')">只在周末</button>
+      <button class="small" onclick="applySchedTemplate('clear')">全部关闭</button>
+      <span class="muted" id="schedPaintHint">按住鼠标拖动可以连续涂格子</span>
+    </div>
+    <div class="sched" id="schedGrid"></div>
+    <div class="rowgap" style="margin-top:12px">
+      <button class="primary small" id="saveSched">保存时段</button>
+      <span class="muted">蓝色 = 允许；灰色 = 不允许（半小时一格）</span>
+    </div>
+  </div>
+
+  <div class="row between" style="margin:34px 0 14px">
+    <h2 style="margin:0">电视画面</h2>
+    <div class="rowgap">
+      <select id="shotDev" style="width:auto;max-width:220px"></select>
+      <label class="muted" style="display:flex;align-items:center;gap:8px;cursor:pointer"
+             title="打开后按下方间隔对在线的电视截一次屏；截图存在管理端 data/shots/ 下，不上传第三方">
+        <input type="checkbox" id="shotOn" style="width:auto"> 自动截屏
+      </label>
+      <span class="muted" style="display:flex;align-items:center;gap:6px">
+        间隔
+        <input id="shotInterval" type="number" min="5" max="600" style="width:64px;text-align:center" title="每隔多少秒截一张，最小 5 秒">
+        秒
+      </span>
+      <span class="muted" style="display:flex;align-items:center;gap:6px">
+        最多
+        <input id="shotMaxCount" type="number" min="5" max="500" style="width:64px;text-align:center" title="最多保存几张，超出的从最旧的开始删">
+        张
+      </span>
+      <button class="small" id="shotCfgSave" title="保存截图间隔和最大张数">保存</button>
+      <button class="small" id="shotNow">立即截图</button>
+      <button class="small" id="shotDiag" title="逐步检查密钥、网络、授权、截屏、压缩，直接定位失败在哪一步">截图自检</button>
+      <button class="small" id="shotRefresh">刷新</button>
+    </div>
+  </div>
+  <div class="card" id="shotCard">
+    <div class="muted" id="shotEmpty" style="display:none">还没有截图 —— 勾选「自动截屏」后，电视在线时按设定间隔新增</div>
+    <!-- 照片墙：保留窗口以内的截图叠放（后一张压住前一张 2/3，只露 1/3 供选择），
+         鼠标悬停放大、点击弹出预览 -->
+    <div id="shotWrap">
+      <div id="shotWall"></div>
+      <div class="muted" id="shotMeta" style="margin-top:8px"></div>
+    </div>
+    <!-- 预览层：点击某张截图后全屏看原图，← → 切换，Esc / 点空白关闭 -->
+    <div id="shotViewer">
+      <button class="nav prev" id="shotPrev" title="上一张">‹</button>
+      <img id="shotViewerImg" alt="截图预览">
+      <button class="nav next" id="shotNext" title="下一张">›</button>
+      <div class="cap" id="shotViewerCap"></div>
+    </div>
+    <!-- 自检/排查区默认隐藏，点「截图自检」才展开；首页只留电视画面 -->
+    <div id="shotTools" style="display:none;margin-top:14px;padding:14px;border-radius:10px;background:rgba(0,0,0,.18)">
+      <div class="row between" style="margin-bottom:10px">
+        <b>截图自检 / 失败排查</b>
+        <button class="small" id="shotToolsClose">收起</button>
+      </div>
+      <div>
+        <div class="muted" id="shotKeyInfo" style="line-height:1.7">adb 密钥：读取中…</div>
+        <div class="rowgap" style="margin-top:10px;flex-wrap:wrap">
+          <input type="file" id="shotKeyFile" style="width:260px">
+          <button class="small" id="shotKeyBtn">上传已授权的 adb 私钥</button>
+        </div>
+        <div class="muted" style="margin-top:8px">
+          最常见原因：服务端用的是自己生成的钥匙、电视没授权。上传电脑上已授权的 adbkey 即可
+          <i class="hicon" tabindex="0" data-tip="把电脑上 <code>C:\Users\&lt;你&gt;\.android\adbkey</code> 整份传上来；别在带 BOM 的文本编辑器里改文件（会带进 BOM / 引号差异导致解析失败）。上传后不用重启，下一次连接立即生效。">i</i>
+        </div>
+        <hr style="border:0;border-top:1px solid rgba(255,255,255,.1);margin:16px 0">
+        <div class="muted">
+          <b>电视 IP</b>：<span id="shotIpInfo">读取中…</span>
+          <i class="hicon" tabindex="0" data-tip="管理端跑在 Docker 里时，管理端看到的「来源 IP」可能是网桥网关（如 <code>172.23.0.1</code>），并不是电视。填一次电视的真实局域网 IP，截图和离线唤醒就都通了；留空恢复自动识别。">i</i>
+        </div>
+        <div class="rowgap" style="margin-top:10px;flex-wrap:wrap">
+          <input id="shotIpInput" placeholder="例如 192.168.1.73" style="width:220px">
+          <button class="small" id="shotIpBtn">保存并自检</button>
+          <button class="small" id="shotIpAuto">恢复自动识别</button>
+        </div>
+        <pre id="shotDiagOut" class="mono" style="display:none;white-space:pre-wrap;word-break:break-all;margin-top:12px;padding:12px;border-radius:8px;background:rgba(0,0,0,.22);line-height:1.7;font-size:12px"></pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="row between" style="margin:34px 0 14px">
+    <h2 style="margin:0">运行日志</h2>
+    <div class="rowgap">
+      <span class="muted" id="evStat"></span>
+      <button class="ghost small" id="evMore">更多 →</button>
+    </div>
+  </div>
+  <div class="card">
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th style="width:170px">时间</th><th style="width:110px">类型</th>
+          <th style="width:180px">设备</th><th>详情</th></tr></thead>
+        <tbody id="evBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  </div><!-- /mainView -->
+
+  <!-- ===================== 二级页：题库 ===================== -->
+  <div id="bankView" class="hidden">
+    <div class="pagebar">
+      <button class="ghost small" id="bankBack">← 返回</button>
+      <div style="min-width:0">
+        <h1>题库管理</h1>
+      </div>
+      <div class="spacer"></div>
+      <button class="small" id="bankWrong">错题本</button>
+      <button class="small" id="bankSubjects">学科管理</button>
+      <button class="small" id="bankAdd">＋ 新增题目</button>
+      <button class="small" id="bankImport">批量导入</button>
+    </div>
+
+
+  <div class="card">
+    <div class="rowgap" id="qSubjects" style="margin-bottom:12px"></div>
+    <div class="rowgap" style="margin-bottom:14px">
+      <select id="qGrade" style="width:auto" title="按年级筛选题库">
+        <option value="all">全部年级</option>
+        <option value="1">一年级</option><option value="2">二年级</option>
+        <option value="3">三年级</option><option value="4">四年级</option>
+        <option value="5">五年级</option><option value="6">六年级</option>
+      </select>
+      <label class="chk" title="选了具体年级时，把通用题（grade=0）也一起列出来">
+        <input type="checkbox" id="qIncGeneral">
+        <span style="font-weight:600">含通用题</span>
+      </label>
+      <select id="qType" style="width:auto">
+        <option value="all">全部题型</option>
+        <option value="choice">单选</option>
+        <option value="judge">判断</option>
+        <option value="multi">多选</option>
+      </select>
+      <select id="qLevel" style="width:auto">
+        <option value="all">全部难度</option>
+        <option value="1">简单</option>
+        <option value="2">中等</option>
+        <option value="3">挑战</option>
+      </select>
+      <input id="qSearch" placeholder="搜索题干或答案" style="width:220px">
+      <select id="qSize" style="width:auto" title="每页显示多少道题">
+        <option value="10">每页 10 道</option>
+        <option value="20" selected>每页 20 道</option>
+        <option value="50">每页 50 道</option>
+        <option value="100">每页 100 道</option>
+      </select>
+      <button class="small" id="qRefresh">查询</button>
+      <button class="small" id="qBatchToggle" title="打开后每行前面会出现勾选框，可一次改一批">批量操作</button>
+    </div>
+    <div class="rowgap" style="margin:0 0 8px;align-items:center">
+      <span class="muted" id="qScopeStat">当前筛选：读取中…</span>
+      <button class="small" id="qUseScope" title="把上面的年级 / 学科 / 难度筛选保存为电视出题范围">把当前筛选设为出题范围</button>
+    </div>
+    <div class="muted" id="qScopeLive" style="margin:0 0 12px;font-size:12.5px"></div>
+    <!-- 打开「批量操作」后才出现：一次改一批，不用逐行点 -->
+    <div class="rowgap hidden" id="qBatchBar" style="align-items:center;margin:0 0 10px;padding:8px 12px;
+         background:var(--card-hi);border:1px solid var(--line);border-radius:12px">
+      <b id="qBatchCount" style="font-size:13px">已选 0 道</b>
+      <button class="small" id="qbEnable">启用</button>
+      <button class="small" id="qbDisable">停用</button>
+      <button class="small" id="qbReset" title="清掉出题记录：这些题立刻回到「还没出过」的优先池，不用等冷却">清出题记录</button>
+      <button class="small danger" id="qbDelete">删除</button>
+      <button class="small" id="qbExport" title="把勾中的题导出成 JSON 题库包，可以直接用「选择文件导入」再导回来">导出</button>
+      <span class="spacer"></span>
+      <button class="small ghost" id="qbClear">取消选择</button>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="qtable nopick" id="qTable">
+        <thead>
+        <tr><th style="width:36px"><input type="checkbox" class="qpick" id="qAll" title="选中本页全部"></th>
+          <th style="width:62px">年级</th><th style="width:72px">学科</th><th style="width:54px">题型</th>
+          <th style="width:88px">难度</th>
+          <th>题干</th><th style="width:88px">答案</th>
+          <th style="width:158px">提示 / 解析</th><th style="width:48px">状态</th><th style="width:206px"></th></tr>
+        </thead>
+        <tbody id="qBody"></tbody>
+      </table>
+    </div>
+    <div class="pager" id="qPager"></div>
+  </div>
+
+  <details id="dSubjects">
+    <summary>学科管理</summary>
+    <div style="margin-top:14px">
+      <div class="muted" style="margin-bottom:10px">选年级后管理该年级学科：内置 4 科可改名 / 换色，自定义学科可增删
+        <i class="hicon" tabindex="0" data-tip="各年级互不影响：比如只给三年级加「科学」，一年级不会出现。">i</i>
+      </div>
+      <div class="rowgap" style="margin-bottom:12px">
+        <select id="smGrade" style="width:auto">
+          <option value="1">一年级</option><option value="2">二年级</option>
+          <option value="3" selected>三年级</option><option value="4">四年级</option>
+          <option value="5">五年级</option><option value="6">六年级</option>
+        </select>
+        <button class="small" id="smRefresh">刷新</button>
+      </div>
+      <div id="smList" class="rowgap" style="margin-bottom:12px;flex-wrap:wrap"></div>
+      <div class="rowgap">
+        <input id="smName" placeholder="新学科名称，如 科学" style="width:210px">
+        <input id="smShort" placeholder="简称（1 字）" style="width:130px">
+        <input id="smColor" type="color" value="#5BC8B0" style="width:64px;height:36px;padding:2px">
+        <button class="primary" id="smAdd">新增学科</button>
+      </div>
+      <div id="smMsg" class="muted" style="margin-top:10px"></div>
+    </div>
+  </details>
+
+  <details id="dNew">
+    <summary>新增题目</summary>
+    <div style="margin-top:14px">
+      <div class="cols">
+        <div class="field"><label class="f">年级</label>
+          <select id="nGrade" onchange="onFormGradeChange('n')">
+            <option value="0">通用</option>
+            <option value="1">一年级</option><option value="2">二年级</option>
+            <option value="3">三年级</option><option value="4">四年级</option>
+            <option value="5">五年级</option><option value="6">六年级</option>
+          </select>
+        </div>
+        <div class="field"><label class="f">学科</label>
+          <select id="nSubject" onchange="syncOptionHint()"></select>
+        </div>
+        <div class="field"><label class="f">题型</label>
+          <select id="nType" onchange="syncOptionHint()">
+            <option value="choice">单选</option>
+            <option value="judge">判断（对 / 错）</option>
+            <option value="multi">多选</option>
+          </select>
+        </div>
+        <div class="field"><label class="f">难度</label>
+          <select id="nLevel"><option value="1">简单</option><option value="2" selected>中等</option><option value="3">挑战</option></select>
+        </div>
+        <div class="field"><label class="f">星级（1–5，仅用于统计）</label>
+          <select id="nStars"><option>1</option><option selected>2</option><option>3</option><option>4</option><option>5</option></select>
+        </div>
+        <div class="field"><label class="f">优先级（0–999，越大越先出）</label>
+          <input id="nPriority" type="number" min="0" max="999" value="0"
+            title="默认 0。填 10 的题会排在所有 0 的题前面；相同优先级之间随机">
+        </div>
+      </div>
+      <div class="field"><label class="f">题干</label><input id="nPrompt" placeholder="365 + 128 = ?"></div>
+      <div class="cols">
+        <div class="field"><label class="f" id="nAnswerLabel">答案</label><input id="nAnswer" placeholder="493"></div>
+        <div class="field" id="fNOptions"><label class="f" id="nOptionsLabel">选项（逗号分隔）</label>
+          <input id="nOptions" placeholder="493,483,503,383"></div>
+      </div>
+      <div class="field"><label class="f">提示（可选，答错前给孩子看的思路；留空按学科给通用提示）</label>
+        <input id="nHint" placeholder="先算 365+100，再加 28"></div>
+      <div class="field"><label class="f">解析（可选，答完后显示「为什么」）</label>
+        <input id="nExplanation" placeholder="365 + 128 = 493"></div>
+      <button class="primary" id="nAdd">添加</button>
+    </div>
+  </details>
+
+  <details id="dImp">
+    <!-- 标题行：左边「批量导入 + 说明图标」，右边「选择文件导入」，三者一条线垂直居中 -->
+    <summary class="impsum">
+      <span class="impname">批量导入<i class="hicon" id="impTip" tabindex="0"
+        data-tip="一行一道题：<code>题干|答案|选项|提示</code>，选项用英文逗号分隔。<br>行首可以写 <code>[年级/学科/难度]</code> 单独指定，如 <code>[3年级/语文/2]</code>；也可以只写 <code>[学科]</code> 或 <code>[学科/难度]</code>，不写就按通用数学、难度中等。<br>多选：多个正确答案用顿号连起来（<code>苹果、香蕉</code>），会自动存成多选题；判断题按单选写，选项填 <code>对,错</code>。<br>纯数学题可以写 <code>12+34=46</code> 这种等号形式。<br>「选择文件导入」支持 <code>.json</code> 题库包（按年级 / 学科 / 题干自动去重）或 <code>.txt</code> 文本。">i</i></span>
+      <span class="spacer"></span>
+      <button class="small impfile" id="impFileBtn">选择文件导入</button>
+      <input type="file" id="impFile" accept=".json,.txt,application/json,text/plain" class="hidden">
+    </summary>
+    <div class="impbody">
+      <textarea id="impText" rows="6"
+        placeholder="[语文] 「水」的拼音是？|shuǐ|shuǐ,shuì,shuī&#10;[语文] 下面哪些是水果？|苹果、香蕉|苹果,香蕉,铅笔,桌子"></textarea>
+      <!-- 结果提示在左、开始导入在右，都贴在输入框下面的卡片底部 -->
+      <div class="impfoot">
+        <span id="impMsg" class="muted"></span>
+        <button class="primary" id="impBtn">开始导入</button>
+      </div>
+    </div>
+  </details>
+
+  </div><!-- /bankView -->
+
+  <!-- ===================== 二级页：错题本 ===================== -->
+  <div id="wrongView" class="hidden">
+    <div class="pagebar">
+      <button class="ghost small" id="wrongBack">← 返回题库</button>
+      <div style="min-width:0">
+        <h1>错题本</h1>
+        <div class="sub" id="wrongStat">正在读取…</div>
+      </div>
+      <div class="spacer"></div>
+      <button class="small" id="wrongRefresh">刷新</button>
+    </div>
+    <div class="card">
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+          <tr><th style="width:76px">学科</th><th style="width:72px">难度</th><th>题干</th>
+            <th style="width:96px">答案</th><th style="width:78px">错几次</th>
+            <th style="width:74px">连对</th><th style="width:110px">最近出错</th><th style="width:80px"></th></tr>
+          </thead>
+          <tbody id="wBody"></tbody>
+        </table>
+      </div>
+      <div class="muted" id="wMore" style="text-align:center;padding-top:14px"></div>
+    </div>
+  </div>
+
+  <!-- ===================== 二级页：运行日志 ===================== -->
+  <div id="logsView" class="hidden">
+    <div class="pagebar">
+      <button class="ghost small" id="logsBack">← 返回</button>
+      <div style="min-width:0">
+        <h1>运行日志</h1>
+        <div class="sub" id="logsStat">正在读取…</div>
+      </div>
+      <div class="spacer"></div>
+      <button class="small" id="logsRefresh">刷新</button>
+    </div>
+
+    <div class="card">
+      <div class="rowgap" id="logTypes" style="margin-bottom:14px;flex-wrap:wrap"></div>
+      <div class="rowgap" style="margin-bottom:14px">
+        <select id="logDevice" style="width:auto"><option value="all">全部设备</option></select>
+        <select id="logSize" style="width:auto" title="每页显示多少条">
+          <option value="10">每页 10 条</option>
+          <option value="20" selected>每页 20 条</option>
+          <option value="50">每页 50 条</option>
+          <option value="100">每页 100 条</option>
+        </select>
+        <input id="logSearch" placeholder="搜索设备号 / 题目 / IP" style="width:230px">
+        <button class="small" id="logQuery">查询</button>
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+          <tr><th style="width:172px">时间</th><th style="width:112px">类型</th>
+            <th style="width:190px">设备</th><th>详情</th></tr>
+          </thead>
+          <tbody id="logBody"></tbody>
+        </table>
+      </div>
+      <div class="pager" id="logPager"></div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <div class="row between" style="margin-bottom:10px">
+        <div class="devname" style="font-size:15px">日志归档（详细日志文件）</div>
+        <div class="rowgap">
+          <span class="muted" id="logFilesStat">正在读取…</span>
+          <button class="small" id="logExportTodayBtn" title="把今天 0 点到现在的全部事件导出成文件（实时日志不动）。重复导出会覆盖同名文件，想要最新的就再点一次">导出今天</button>
+          <input type="date" id="logExportDay" class="small" style="width:150px" title="选任意一天导出（默认昨天，不能选未来）">
+          <button class="small" id="logExportDayBtn" title="把选中那天的全部事件导出成文件">导出该日</button>
+          <button class="ghost small" id="logFilesRefresh">刷新</button>
+        </div>
+      </div>
+      <div class="muted" style="font-size:12.5px;margin-bottom:10px">
+        每天 <b>00:05</b> 自动把昨天的事件导出成 <code>tvguard-YYYY-MM-DD.log</code>，存在服务端的 <code>data/logs/</code>
+        <i class="hicon" tabindex="0" data-tip="包含连接断开 / 恢复这类高频记录，一行一条：时间 | 类型 | 设备 | 详情 | 原始 JSON。<br>导出后这些事件会从实时日志里删掉，页面只留当天的；文件可随时下载或删除。<br>「导出今天」/「导出该日」只落文件、不动实时日志，同一天重复导出会覆盖旧文件。">i</i>
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+          <tr><th style="width:140px">日期</th><th style="width:100px">条数</th>
+            <th style="width:100px">大小</th><th style="width:180px">导出时间</th><th></th></tr>
+          </thead>
+          <tbody id="logFilesBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+<!-- ===================== 二级页：客户端版本 ===================== -->
+  <div id="apkView" class="hidden">
+    <div class="pagebar">
+      <button class="ghost small" id="apkBack">← 返回</button>
+      <div style="min-width:0">
+        <h1>客户端版本</h1>
+        <div class="sub" id="apkStat">正在读取…</div>
+      </div>
+      <div class="spacer"></div>
+      <button class="small" id="apkRefresh" title="重新读取客户端心跳上报的真实版本">同步客户端版本</button>
+    </div>
+
+    <div class="card">
+      <div class="devname" style="font-size:15px">上传新版本</div>
+      <div class="rowgap" style="margin-top:14px">
+        <input type="file" id="apkFile" accept=".apk,application/vnd.android.package-archive"
+               style="width:auto;max-width:340px">
+        <button class="primary" id="apkUpload">上传并发布</button>
+      </div>
+      <div class="bar" id="apkBar" style="display:none;margin-top:14px"><i style="width:0"></i></div>
+      <div class="muted" id="apkProg" style="margin-top:8px"></div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <div class="row between" style="margin-bottom:10px">
+        <div class="devname" style="font-size:15px">版本列表</div>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="mid">
+          <thead>
+          <tr><th style="width:160px">版本</th><th style="width:100px">版本码</th>
+            <th style="width:90px">大小</th><th style="width:170px">上传时间</th>
+            <th style="width:110px">状态</th><th>操作</th></tr>
+          </thead>
+          <tbody id="apkBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 日志详情：点「答题」那行看这道题的原文、孩子选了什么、正确答案和解析 -->
+<div class="modal hidden" id="evModal">
+  <div class="modal-card">
+    <div class="row between" style="margin-bottom:4px">
+      <div class="devname" id="evmTitle">题目详情</div>
+      <button class="ghost small" id="evmClose">关闭</button>
+    </div>
+    <div class="muted" id="evmMeta"></div>
+    <div id="evmBody"></div>
+  </div>
+</div>
+
+<!-- 编辑题目：字段和「新增题目」一致，保存只提交改过的那些字段 -->
+<div class="modal hidden" id="qEditModal">
+  <div class="modal-card">
+    <div class="row between" style="margin-bottom:14px">
+      <div class="devname">编辑题目 <span class="muted" id="qeId" style="font-size:12px;font-weight:400"></span></div>
+      <button class="ghost small" id="qeCancel">取消</button>
+    </div>
+    <div class="cols">
+      <div class="field"><label class="f">年级</label>
+        <select id="qeGrade">
+          <option value="0">通用</option>
+          <option value="1">一年级</option><option value="2">二年级</option>
+          <option value="3">三年级</option><option value="4">四年级</option>
+          <option value="5">五年级</option><option value="6">六年级</option>
+        </select>
+      </div>
+      <div class="field"><label class="f">学科</label><select id="qeSubject"></select></div>
+      <div class="field"><label class="f">题型</label>
+        <select id="qeType">
+          <option value="choice">单选</option>
+          <option value="judge">判断（对 / 错）</option>
+          <option value="multi">多选</option>
+        </select>
+      </div>
+      <div class="field"><label class="f">难度</label>
+        <select id="qeLevel"><option value="1">简单</option><option value="2">中等</option><option value="3">挑战</option></select>
+      </div>
+      <div class="field"><label class="f">星级（1–5，仅统计）</label>
+        <select id="qeStars"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+      </div>
+      <div class="field"><label class="f">优先级（越大越先出）</label>
+        <input id="qePriority" type="number" min="0" max="999" value="0">
+      </div>
+    </div>
+    <div class="field"><label class="f">题干</label><input id="qePrompt"></div>
+    <div class="cols">
+      <div class="field"><label class="f">答案</label><input id="qeAnswer"></div>
+      <div class="field" id="qeOptionsBox"><label class="f">选项（逗号分隔）</label><input id="qeOptions"></div>
+    </div>
+    <div class="field"><label class="f">提示（答错前给孩子看）</label><input id="qeHint"></div>
+    <div class="field"><label class="f">解析（答完后显示）</label><input id="qeExplanation"></div>
+    <label class="chk" style="margin-bottom:4px">
+      <input type="checkbox" id="qeEnabled"><span style="font-weight:600">启用这道题</span>
+      <span class="muted" style="font-weight:400">（停用后不会出给孩子）</span>
+    </label>
+    <div class="rowgap" style="margin-top:16px;justify-content:flex-end">
+      <button class="ghost" id="qeCancel2">取消</button>
+      <button class="primary" id="qeSave">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- 修改管理密码：改完写进 data 卷，重启不丢，也不用再去改 .env -->
+<div class="modal hidden" id="pwModal">
+  <div class="modal-card" style="max-width:460px">
+    <div class="row between" style="margin-bottom:14px">
+      <div class="devname">修改管理密码</div>
+      <button class="ghost small" id="pwCancel">取消</button>
+    </div>
+    <div class="field">
+      <label class="f">当前密码</label>
+      <input id="pwCur" type="password" autocomplete="current-password" placeholder="现在用的密码">
+    </div>
+    <div class="field">
+      <label class="f">新密码（至少 6 位）</label>
+      <input id="pwNew" type="password" autocomplete="new-password" placeholder="建议字母 + 数字">
+    </div>
+    <div class="field">
+      <label class="f">再输一次新密码</label>
+      <input id="pwNew2" type="password" autocomplete="new-password">
+    </div>
+    <div class="muted" style="margin-top:12px">改完立即生效，<b>容器重启也不会变回去</b>
+      <i class="hicon" tabindex="0" data-tip="新密码写进 <code>data/config.json</code>（Docker 挂载的 data 卷），从此 <code>.env</code> 里的 <code>ADMIN_PASSWORD</code> 不再使用。<br>其它设备上的后台登录态会失效，客户端的「家长验证」也用新密码。">i</i>
+    </div>
+    <div class="muted" style="margin-top:6px">密码 6~64 位；登录后有效 <span id="pwSessHours">12</span> 小时，过期要重新输入</div>
+    <div class="rowgap" style="margin-top:16px;justify-content:flex-end">
+      <button class="primary" id="pwSave">保存新密码</button>
+    </div>
+  </div>
+</div>
+
+<!-- 脚本按功能拆分：core 最前（工具 + 登录），main 最后（启动 + 全局事件）。
+     都是普通 script，共享全局作用域，页面里的 onclick="fn()" 照旧可用。 -->
+<script src="js/core.js"></script>
+<script src="js/policy.js"></script>
+<script src="js/devices.js"></script>
+<script src="js/bank.js"></script>
+<script src="js/logs.js"></script>
+<script src="js/notice.js"></script>
+<script src="js/apk.js"></script>
+<script src="js/pwd.js"></script>
+  <script src="js/shot.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
